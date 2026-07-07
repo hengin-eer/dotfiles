@@ -1,0 +1,8 @@
+{
+  "fontFamily": "Noto Sans JP",
+  "fontFamilyMonospace": "FiraCode Nerd Font",
+  "fontSize": 14,
+  "theme": "glacier",
+  "syntaxHighlighterTheme": "oneDark",
+  "enableBreaks": true
+}

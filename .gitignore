@@ -1,0 +1,44 @@
+# Ignore everything by default. Dotfiles are managed by explicit path.
+/*
+
+# Repository files
+!/.gitignore
+!/README.md
+
+# Shell and editor settings
+!/.bash_aliases
+!/.bash_profile
+!/.bashrc
+!/.editorconfig
+!/.gitconfig_shared
+!/.tmux.conf
+!/.vimrc
+
+# Managed commands
+!/.bin/
+/.bin/*
+!/.bin/git-nlog
+!/.bin/install.sh
+
+# XDG application settings
+!/.config/
+/.config/*
+
+!/.config/nvim/
+!/.config/nvim/**
+/.config/nvim/.nvimlog
+
+!/.config/wezterm/
+!/.config/wezterm/**
+
+!/.config/gh/
+/.config/gh/*
+!/.config/gh/config.yml
+
+!/.config/mdts/
+/.config/mdts/*
+!/.config/mdts/config.json
+
+# Fonts installed by .bin/install.sh
+!/fonts/
+!/fonts/**

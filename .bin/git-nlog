@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# display simple logs with ordered prefix
+# I use for `git rebase -i`
+#
+
+# $1（1番目の引数）が指定されていなければ、デフォルトで 10 を使う
+COUNT=${1:-10}
+
+git log -n "$COUNT" --oneline | nl
