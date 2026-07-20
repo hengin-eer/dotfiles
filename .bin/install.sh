@@ -305,6 +305,7 @@ install_managed_paths() {
 .config/wezterm|.config/wezterm
 .config/gh/config.yml|.config/gh/config.yml
 .config/mdts/config.json|.config/mdts/config.json
+.config/mise/global.toml|.config/mise/config.toml
 EOF
 }
 

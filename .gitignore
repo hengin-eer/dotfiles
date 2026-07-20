@@ -39,6 +39,10 @@
 /.config/mdts/*
 !/.config/mdts/config.json
 
+!/.config/mise/
+/.config/mise/*
+!/.config/mise/global.toml
+
 # Fonts installed by .bin/install.sh
 !/fonts/
 !/fonts/**

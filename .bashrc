@@ -117,10 +117,6 @@ fi
 
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
-
 [ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env" # ghcup-env
 
 # SSH agent for Git over SSH
@@ -203,10 +199,6 @@ eval "$(starship init bash)"
 export PATH=$HOME/.bin:$PATH
 # default editor
 export EDITOR=vim
-# Volta (Node.js toolchain manager)
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
-
 # >>> juliaup initialize >>>
 
 # !! Contents within this block are managed by juliaup !!
