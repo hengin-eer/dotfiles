@@ -1,0 +1,76 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+    echo "Usage: git-ndiff.sh [--name-only] <commit-number>" >&2
+    echo "Examples:" >&2
+    echo "  git-ndiff.sh 4" >&2
+    echo "  git-ndiff.sh --name-only 4" >&2
+}
+
+name_only=false
+number=
+
+for arg in "$@"; do
+    case "$arg" in
+    --name-only)
+        name_only=true
+        ;;
+    -h | --help)
+        usage
+        exit 0
+        ;;
+    --*)
+        echo "git-ndiff.sh: unknown option: $arg" >&2
+        usage
+        exit 2
+        ;;
+    *)
+        if [ -n "$number" ]; then
+            echo "git-ndiff.sh: only one commit number can be specified" >&2
+            usage
+            exit 2
+        fi
+        number=$arg
+        ;;
+    esac
+done
+
+if [ -z "$number" ]; then
+    usage
+    exit 2
+fi
+
+case "$number" in
+'' | *[!0-9]* | 0)
+    echo "git-ndiff.sh: commit-number must be a positive integer" >&2
+    usage
+    exit 2
+    ;;
+esac
+
+hash=$(git nlog | awk -v number="$number" '$1 == number { print $2; exit }')
+
+if [ -z "$hash" ]; then
+    echo "git-ndiff.sh: commit number not found: $number" >&2
+    exit 1
+fi
+
+if ! git rev-parse --verify --quiet "${hash}^{commit}" >/dev/null; then
+    echo "git-ndiff.sh: invalid commit hash returned by git nlog: $hash" >&2
+    exit 1
+fi
+
+if git rev-parse --verify --quiet "${hash}^" >/dev/null; then
+    base="${hash}^"
+else
+    # A root commit has no parent, so compare it with Git's empty tree.
+    base=$(git hash-object -t tree /dev/null)
+fi
+
+if [ "$name_only" = true ]; then
+    git diff --name-only "$base" "$hash"
+else
+    git diff "$base" "$hash"
+fi

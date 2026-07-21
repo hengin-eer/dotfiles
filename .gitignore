@@ -18,6 +18,7 @@
 !/.bin/
 /.bin/*
 !/.bin/git-nlog
+!/.bin/git-ndiff
 !/.bin/install.sh
 
 # XDG application settings
