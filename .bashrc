@@ -225,10 +225,6 @@ export PATH="$HOME/.cabal/bin:$PATH"
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
 
-# fvm(flutter version management)
-export PATH="$HOME/fvm/bin:$PATH"
-export PATH="$PATH:$HOME/flutter/bin"
-
 # Git config
 # ----------
 # create path to enable diff-highlight
