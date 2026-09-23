@@ -1,6 +1,6 @@
 # My dotfiles
 
-Vim、Neovim、shell、WezTermなど、再現したいユーザー設定を管理するための
+Vim、Neovim、shell、WezTerm、Herdrなど、再現したいユーザー設定を管理するための
 dotfilesです。LinuxとmacOSへのインストールに対応しています。
 
 ## 管理方針
@@ -10,8 +10,9 @@ dotfilesです。LinuxとmacOSへのインストールに対応しています�
 
 主な管理対象は次のとおりです。
 
-- Bash、Vim、tmux、EditorConfig
-- Neovim、WezTerm
+- Bash、Vim、EditorConfig
+- Neovim、WezTerm（端末エミュレーター）
+- Herdr（ターミナルマルチプレクサーとworktree管理）
 - GitHub CLIの`config.yml`（`hosts.yml`は管理しない）
 - mdtsの表示設定
 - miseのツールバージョン設定
@@ -30,6 +31,9 @@ git clone git@github.com:hengin-eer/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./.bin/install.sh --dry-run
 ./.bin/install.sh
+mise install
+herdr integration install codex
+npx skills add herdrdev/herdr --skill herdr -g
 ```
 
 インストーラは以下を行います。
@@ -40,6 +44,42 @@ cd ~/dotfiles
 - vim-plugが存在しない場合は公式リポジトリからインストール
 
 同じ内容のsymlinkは変更しないため、インストーラは再実行できます。
+
+Herdrはmiseでバージョンを固定してインストールします。Herdrの設定ファイルだけを
+`~/.config/herdr/config.toml`へsymlinkし、ログやセッション状態はHOME側に残します。
+Codex integrationは`~/.codex/hooks.json`と`config.toml`を更新し、公式Herdr skillは
+グローバルに追加します。
+
+WezTermは端末エミュレーターとして引き続き使います。workspace、tab、pane、copy modeの
+操作はHerdrが担当します。prefixは`Ctrl+G`で、pane分割は`d`（左右）/`r`（上下）、
+移動は`h/j/k/l`、zoomは`z`、resize modeは`s`です。
+
+この環境のmiseでHerdrのGitHub artifact attestationがTSA証明書検証エラーになる場合は、
+リリースのSHA-256を照合したうえで、GitHub attestation検証だけを一時的に無効化して
+インストールできます（SLSA provenance検証は引き続き実行されます）。
+
+```sh
+MISE_GITHUB_ATTESTATIONS=false mise install github:herdrdev/herdr@0.9.1
+```
+
+### worktreeでの作業
+
+Herdrでworktreeを作る前に、親workspaceで意図したベースブランチ（通常は`main`）へ
+移動し、最新化して作業ツリーをcleanにします。Herdrは既定で作成元のworkspaceの
+`HEAD`から新しいブランチを切ります。別の基準が必要ならworktree作成時にbaseを指定します。
+つまり、どのブランチをベースにするかは親workspaceの状態または明示したbaseで決まり、
+常に自動で`main`になるわけではありません。
+
+各worktreeは独立した作業ディレクトリとindexを持つため、そこで通常のCLIやGitコマンドを
+実行できます。一方、Gitのブランチ情報やオブジェクトは共有されます。同じブランチを複数の
+worktreeで同時にcheckoutすることはできず、branch/refを書き換える操作も他worktreeへ
+影響し得ます。複数の作業で同一ブランチを使い回さないでください。
+
+エージェントはworktree内で実装、確認、commit、push、PR作成まで進めます。merge、rebase、
+ブランチ削除、worktree削除、reset、clean、force-pushは人の確認後に行います。Codex向けの
+コマンド承認ルールは`.codex/rules/herdr-git.rules`で管理し、既存の`default.rules`は変更
+しません。自然言語の共通指示は`.codex/AGENTS.md`から`~/.codex/AGENTS.md`へsymlink
+します。
 
 ## Codex personal skills
 

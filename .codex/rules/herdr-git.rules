@@ -1,0 +1,72 @@
+# Keep normal implementation, push, and pull-request creation autonomous.
+# Pause for explicit human approval before history-changing or destructive Git actions.
+prefix_rule(
+    pattern = ["git", "merge"],
+    decision = "prompt",
+    justification = "Confirm with the user before merging branches.",
+)
+prefix_rule(
+    pattern = ["git", "rebase"],
+    decision = "prompt",
+    justification = "Confirm with the user before rebasing history.",
+)
+prefix_rule(
+    pattern = ["git", "branch", "-d"],
+    decision = "prompt",
+    justification = "Confirm with the user before deleting a branch.",
+)
+prefix_rule(
+    pattern = ["git", "branch", "-D"],
+    decision = "prompt",
+    justification = "Confirm with the user before deleting a branch.",
+)
+prefix_rule(
+    pattern = ["git", "branch", "--delete"],
+    decision = "prompt",
+    justification = "Confirm with the user before deleting a branch.",
+)
+prefix_rule(
+    pattern = ["git", "worktree", "remove"],
+    decision = "prompt",
+    justification = "Confirm with the user before removing a worktree.",
+)
+prefix_rule(
+    pattern = ["git", "reset"],
+    decision = "prompt",
+    justification = "Confirm with the user before resetting repository state.",
+)
+prefix_rule(
+    pattern = ["git", "clean"],
+    decision = "prompt",
+    justification = "Confirm with the user before deleting untracked files.",
+)
+prefix_rule(
+    pattern = ["git", "switch", "-C"],
+    decision = "prompt",
+    justification = "Confirm with the user before recreating a branch.",
+)
+prefix_rule(
+    pattern = ["git", "checkout", "-B"],
+    decision = "prompt",
+    justification = "Confirm with the user before recreating a branch.",
+)
+prefix_rule(
+    pattern = ["git", "push", "--force"],
+    decision = "prompt",
+    justification = "Confirm with the user before force-pushing.",
+)
+prefix_rule(
+    pattern = ["git", "push", "-f"],
+    decision = "prompt",
+    justification = "Confirm with the user before force-pushing.",
+)
+prefix_rule(
+    pattern = ["git", "push", "--force-with-lease"],
+    decision = "prompt",
+    justification = "Confirm with the user before force-pushing.",
+)
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "Confirm with the user before merging a pull request.",
+)
