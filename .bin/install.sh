@@ -297,13 +297,15 @@ install_managed_paths() {
 .bashrc|.bashrc
 .editorconfig|.editorconfig
 .gitconfig_shared|.gitconfig_shared
-.tmux.conf|.tmux.conf
 .vimrc|.vimrc
+.codex/AGENTS.md|.codex/AGENTS.md
+.codex/rules/herdr-git.rules|.codex/rules/herdr-git.rules
 .bin/git-nlog|.bin/git-nlog
 .bin/git-ndiff|.bin/git-ndiff
 .bin/install.sh|.bin/install.sh
 .config/nvim|.config/nvim
 .config/wezterm|.config/wezterm
+.config/herdr/config.toml|.config/herdr/config.toml
 .config/gh/config.yml|.config/gh/config.yml
 .config/mdts/config.json|.config/mdts/config.json
 .config/mise/global.toml|.config/mise/config.toml
@@ -390,6 +392,7 @@ log "Target home: $HOME"
 migrate_legacy_config
 migrate_legacy_bin
 remove_legacy_link "$HOME/.gitignore" "$DOTDIR/.gitignore"
+remove_legacy_link "$HOME/.tmux.conf" "$DOTDIR/.tmux.conf"
 ensure_git_include
 install_managed_paths
 install_fonts
