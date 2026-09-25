@@ -1,5 +1,7 @@
 # Keep normal implementation, push, and pull-request creation autonomous.
 # Pause for explicit human approval before history-changing or destructive Git actions.
+# Prefix rules cannot detect flags placed after operands; AGENTS.md requires
+# detecting destructive intent first, then using a leading-option form after approval.
 prefix_rule(
     pattern = ["git", "merge"],
     decision = "prompt",
@@ -27,6 +29,11 @@ prefix_rule(
 )
 prefix_rule(
     pattern = ["git", "worktree", "remove"],
+    decision = "prompt",
+    justification = "Confirm with the user before removing a worktree.",
+)
+prefix_rule(
+    pattern = ["herdr", "worktree", "remove"],
     decision = "prompt",
     justification = "Confirm with the user before removing a worktree.",
 )
@@ -64,6 +71,16 @@ prefix_rule(
     pattern = ["git", "push", "--force-with-lease"],
     decision = "prompt",
     justification = "Confirm with the user before force-pushing.",
+)
+prefix_rule(
+    pattern = ["git", "push", "--delete"],
+    decision = "prompt",
+    justification = "Confirm with the user before deleting a remote branch.",
+)
+prefix_rule(
+    pattern = ["git", "push", "-d"],
+    decision = "prompt",
+    justification = "Confirm with the user before deleting a remote branch.",
 )
 prefix_rule(
     pattern = ["gh", "pr", "merge"],

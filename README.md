@@ -52,7 +52,8 @@ Codex integrationは`~/.codex/hooks.json`と`config.toml`を更新し、公式He
 
 WezTermは端末エミュレーターとして引き続き使います。workspace、tab、pane、copy modeの
 操作はHerdrが担当します。prefixは`Ctrl+G`で、pane分割は`d`（左右）/`r`（上下）、
-移動は`h/j/k/l`、zoomは`z`、resize modeは`s`です。
+移動は`h/j/k/l`、zoomは`z`、resize modeは`s`です。tab切替は`Tab`/`Shift+Tab`、
+pane巡回は`Ctrl+Tab`/`Ctrl+Shift+Tab`、tab並べ替えは`Shift+[`/`Shift+]`です。
 
 この環境のmiseでHerdrのGitHub artifact attestationがTSA証明書検証エラーになる場合は、
 リリースのSHA-256を照合したうえで、GitHub attestation検証だけを一時的に無効化して
