@@ -1,0 +1,43 @@
+onboarding = false
+
+[worktrees]
+directory = "~/.herdr/worktrees"
+
+[keys]
+prefix = "ctrl+g"
+help = "prefix+?"
+settings = "prefix+shift+s"
+workspace_picker = "prefix+w"
+new_workspace = "prefix+shift+n"
+rename_workspace = "prefix+shift+w"
+close_workspace = "prefix+shift+d"
+previous_workspace = "prefix+p"
+next_workspace = "prefix+n"
+new_tab = "prefix+c"
+previous_tab = "prefix+tab"
+next_tab = "prefix+shift+tab"
+cycle_pane_next = "prefix+ctrl+tab"
+cycle_pane_previous = "prefix+ctrl+shift+tab"
+move_tab_previous = "prefix+shift+["
+move_tab_next = "prefix+shift+]"
+close_tab = "prefix+shift+x"
+copy_mode = "prefix+["
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+split_vertical = "prefix+d"
+split_horizontal = "prefix+r"
+close_pane = "prefix+x"
+zoom = "prefix+z"
+resize_mode = "prefix+s"
+
+[ui]
+confirm_close = true
+hide_tab_bar_when_single_tab = true
+
+[ui.toast]
+delivery = "terminal"
+
+[ui.sound]
+enabled = true

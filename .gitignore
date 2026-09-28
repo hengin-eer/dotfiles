@@ -13,6 +13,12 @@
 !/.gitconfig_shared
 !/.tmux.conf
 !/.vimrc
+!/.codex/
+/.codex/*
+!/.codex/AGENTS.md
+!/.codex/rules/
+/.codex/rules/*
+!/.codex/rules/herdr-git.rules
 
 # Managed commands
 !/.bin/
@@ -43,6 +49,10 @@
 !/.config/mise/
 /.config/mise/*
 !/.config/mise/global.toml
+
+!/.config/herdr/
+/.config/herdr/*
+!/.config/herdr/config.toml
 
 # Fonts installed by .bin/install.sh
 !/fonts/
