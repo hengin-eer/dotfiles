@@ -1,3 +1,5 @@
+[ ! -f "$HOME/.config/shell/path.sh" ] || . "$HOME/.config/shell/path.sh"
+
 # .bash_profile
 
 # 初回起動時にtmuxを実行

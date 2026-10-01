@@ -6,8 +6,11 @@ if wezterm.config_builder then
     config = wezterm.config_builder()
 end
 
--- set WSL Ubuntu as default domain
-config.default_domain = "WSL:Ubuntu"
+-- WSL domains and Acrylic are only available on Windows.
+if wezterm.target_triple:find("windows") then
+    config.default_domain = "WSL:Ubuntu"
+    config.win32_system_backdrop = "Acrylic"
+end
 
 config.automatically_reload_config = true
 config.font = wezterm.font("FiraCode Nerd Font")
@@ -16,7 +19,6 @@ config.use_ime = true
 config.window_background_opacity = 0.8
 -- NOTE: In Mac OS, you must use this instead of `win32_xxx`
 -- config.macos_window_background_blur = 20
-config.win32_system_backdrop = "Acrylic"
 
 ----------------------------------------------------
 -- Tab

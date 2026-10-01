@@ -9,6 +9,8 @@
 !/.bash_aliases
 !/.bash_profile
 !/.bashrc
+!/.zprofile
+!/.zshrc
 !/.editorconfig
 !/.gitconfig_shared
 !/.tmux.conf
@@ -30,6 +32,10 @@
 # XDG application settings
 !/.config/
 /.config/*
+
+!/.config/shell/
+/.config/shell/*
+!/.config/shell/path.sh
 
 !/.config/nvim/
 !/.config/nvim/**
