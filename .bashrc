@@ -2,6 +2,8 @@
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
+[ ! -f "$HOME/.config/shell/path.sh" ] || . "$HOME/.config/shell/path.sh"
+
 # If not running interactively, don't do anything
 case $- in
 *i*) ;;
@@ -194,9 +196,9 @@ fbr() {
 }
 
 # Starship prompt
-eval "$(starship init bash)"
-# 自作コマンドを読み込む
-export PATH=$HOME/.bin:$PATH
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init bash)"
+fi
 # default editor
 export EDITOR=vim
 # >>> juliaup initialize >>>

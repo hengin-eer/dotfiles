@@ -295,6 +295,9 @@ install_managed_paths() {
 .bash_aliases|.bash_aliases
 .bash_profile|.bash_profile
 .bashrc|.bashrc
+.zprofile|.zprofile
+.zshrc|.zshrc
+.config/shell/path.sh|.config/shell/path.sh
 .editorconfig|.editorconfig
 .gitconfig_shared|.gitconfig_shared
 .vimrc|.vimrc
@@ -353,6 +356,59 @@ install_vim_plug() {
     fi
 }
 
+# Keep bin, lib and share together so Neovim can locate its runtime.
+# NVIM_ARCHIVE may point to an already downloaded official release archive.
+install_neovim() {
+    local architecture
+    local package
+    local install_dir
+    local archive
+
+    if command -v nvim >/dev/null 2>&1; then
+        log "Neovim is already available: $(command -v nvim)"
+        return 0
+    fi
+
+    architecture=$(uname -m)
+    case "$OS/$architecture" in
+    Darwin/arm64) package=nvim-macos-arm64 ;;
+    Darwin/x86_64) package=nvim-macos-x86_64 ;;
+    Linux/aarch64 | Linux/arm64) package=nvim-linux-arm64 ;;
+    Linux/x86_64) package=nvim-linux-x86_64 ;;
+    *) die "unsupported Neovim platform: $OS/$architecture" ;;
+    esac
+    install_dir="$HOME/.local/opt/$package"
+
+    if [ ! -x "$install_dir/bin/nvim" ]; then
+        # Do not overwrite a partial or unrelated installation.
+        [ ! -e "$install_dir" ] || die "incomplete Neovim installation: $install_dir"
+        archive=${NVIM_ARCHIVE:-}
+        if [ -n "$archive" ]; then
+            [ -f "$archive" ] || die "Neovim archive not found: $archive"
+        fi
+        run mkdir -p "$HOME/.local/opt"
+        if [ -z "$archive" ]; then
+            archive="$HOME/.local/opt/$package.tar.gz"
+            log "Download official stable Neovim release"
+            run curl -fL --retry 3 -o "$archive" \
+                "https://github.com/neovim/neovim/releases/latest/download/$package.tar.gz"
+        fi
+        log "Extract Neovim: $install_dir"
+        run tar -xzf "$archive" -C "$HOME/.local/opt"
+    fi
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        log "Link: $HOME/.local/bin/nvim -> $install_dir/bin/nvim"
+        print_command mkdir -p "$HOME/.local/bin"
+        print_command ln -s "$install_dir/bin/nvim" "$HOME/.local/bin/nvim"
+    else
+        [ -x "$install_dir/bin/nvim" ] || die "archive does not contain $package/bin/nvim"
+        "$install_dir/bin/nvim" --version >/dev/null || die "Neovim cannot run on this system"
+        link_path "$install_dir/bin/nvim" "$HOME/.local/bin/nvim"
+        log "Neovim is available: $(command -v nvim)"
+    fi
+}
+
 while [ "$#" -gt 0 ]; do
     case "$1" in
     -n | --dry-run) DRY_RUN=1 ;;
@@ -396,9 +452,13 @@ remove_legacy_link "$HOME/.tmux.conf" "$DOTDIR/.tmux.conf"
 ensure_git_include
 install_managed_paths
 install_fonts
+# Use the repository copy as the installed link does not exist in dry-run mode.
+. "$DOTDIR/.config/shell/path.sh"
+install_neovim
 install_vim_plug
 
 if [ -n "$BACKUP_DIR" ]; then
     log "Backup: $BACKUP_DIR"
 fi
 log "Dotfiles installation completed"
+log "Open a new terminal, or source ~/.config/shell/path.sh to update PATH in this shell"

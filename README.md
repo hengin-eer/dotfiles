@@ -10,7 +10,7 @@ dotfilesです。LinuxとmacOSへのインストールに対応しています�
 
 主な管理対象は次のとおりです。
 
-- Bash、Vim、EditorConfig
+- Bash・zsh、Vim、EditorConfig
 - Neovim、WezTerm（端末エミュレーター）
 - Herdr（ターミナルマルチプレクサーとworktree管理）
 - GitHub CLIの`config.yml`（`hosts.yml`は管理しない）
@@ -42,8 +42,53 @@ npx skills add herdrdev/herdr --skill herdr -g
 - 管理対象の設定だけをHOMEへsymlink
 - Linuxでは`~/.local/share/fonts`、macOSでは`~/Library/Fonts`へフォントをsymlink
 - vim-plugが存在しない場合は公式リポジトリからインストール
+- `nvim` が PATH 上にない場合、OS・CPU に合う公式 stable 配布を curl で取得して
+  `~/.local/opt/nvim-<platform>/` に展開し、`~/.local/bin/nvim` を symlink
 
 同じ内容のsymlinkは変更しないため、インストーラは再実行できます。
+
+Bash・zsh 共通の `~/.config/shell/path.sh` で `~/.local/bin`、`~/.bin` と
+Homebrew の `/opt/homebrew/{bin,sbin}`・`/usr/local/{bin,sbin}` を PATH に追加します。
+zsh は `.zprofile` と `.zshrc`、Bash は `.bash_profile` と `.bashrc` から読み込みます。
+Starship はコマンドが見つかる場合だけシェルに合う初期化を行います。
+既存のシェル設定は置き換え前にバックアップされるので、個人設定は必要に応じて戻してください。
+
+インストール完了後は新しいターミナルを開くか、現在のシェルで次を実行してください。
+インストーラの子プロセスから親シェルの PATH は変更できません。
+
+```sh
+. ~/.config/shell/path.sh
+command -v nvim starship codex
+nvim --version
+```
+
+Neovim は本体だけをコピーせず、`bin`・`lib`・`share` を一緒に配置します。
+Apple Silicon / Intel Mac と Linux（WSLを含む）の arm64 / x86_64 に対応します。
+既に PATH にある Neovim は変更しません。取得済みの公式アーカイブを使う場合は、
+次のように指定できます（指定したアーカイブのバージョンを使用します）。
+
+```sh
+NVIM_ARCHIVE="$PWD/nvim-macos-arm64.tar.gz" ./.bin/install.sh
+```
+
+配布名・構成は [Neovim公式インストール手順](https://github.com/neovim/neovim/blob/master/INSTALL.md)
+に沿っています。初回の通常起動では lazy.nvim とプラグインの取得にもネット接続が必要です。
+
+### Mac で環境構築を完結させる修正計画
+
+今回対応した範囲は、Bash・zsh 共通の PATH、Neovim の取得・配置、Starship の初期化、
+WezTerm の Windows 専用設定の条件分岐です。
+現時点の `.bin/install.sh` は Starship・Codex・mise 本体の自動導入までは行いません。
+
+1. Starship が未導入の場合に、[公式インストーラ](https://starship.rs/guide/)を curl で
+   取得し、`~/.local/bin` を指定して導入する。既存の Homebrew 版があれば再利用する。
+2. Codex の公式導入方式と対応 CPU を確認し、未導入の場合だけ導入する。
+   既存の curl 版（`~/.local/bin/codex`）と Homebrew 版は再利用する。
+3. mise 本体の導入後に `mise install` を実行し、Herdr integration を含むセットアップを
+   明示的なオプションで実行できるようにする。
+4. Mac arm64 / Intel と WSL のクリーン環境で、初回導入・再実行・通信失敗時の動作と
+   `nvim`・`starship`・`codex` の起動を確認する。
+
 
 Herdrはmiseでバージョンを固定してインストールします。Herdrの設定ファイルだけを
 `~/.config/herdr/config.toml`へsymlinkし、ログやセッション状態はHOME側に残します。
