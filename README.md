@@ -42,8 +42,8 @@ npx skills add herdrdev/herdr --skill herdr -g
 - 管理対象の設定だけをHOMEへsymlink
 - Linuxでは`~/.local/share/fonts`、macOSでは`~/Library/Fonts`へフォントをsymlink
 - vim-plugが存在しない場合は公式リポジトリからインストール
-- `nvim` が PATH 上にない場合、OS・CPU に合う公式 stable 配布を curl で取得して
-  `~/.local/opt/nvim-<platform>/` に展開し、`~/.local/bin/nvim` を symlink
+- `nvim` が PATH 上にない場合、固定バージョンの公式配布を取得・検証して
+  `~/.local/opt/nvim-<platform>/` に配置し、`~/.local/bin/nvim` を symlink
 
 同じ内容のsymlinkは変更しないため、インストーラは再実行できます。
 
@@ -64,15 +64,31 @@ nvim --version
 
 Neovim は本体だけをコピーせず、`bin`・`lib`・`share` を一緒に配置します。
 Apple Silicon / Intel Mac と Linux（WSLを含む）の arm64 / x86_64 に対応します。
-既に PATH にある Neovim は変更しません。取得済みの公式アーカイブを使う場合は、
-次のように指定できます（指定したアーカイブのバージョンを使用します）。
+PATH 上にある Neovim は起動・runtime・`vim.lsp.enable` API を確認して再利用します。
+Neovim 0.11 以上が必要です。新規導入の既定は `v0.12.5` で、各配布物の SHA-256 は
+`.bin/nvim-versions.tsv` で管理します。追加登録済みの別バージョンを選ぶ場合は、
+次のように指定します。
 
 ```sh
-NVIM_ARCHIVE="$PWD/nvim-macos-arm64.tar.gz" ./.bin/install.sh
+./.bin/install.sh --nvim-version v0.12.5
 ```
 
-配布名・構成は [Neovim公式インストール手順](https://github.com/neovim/neovim/blob/master/INSTALL.md)
+取得済みの公式アーカイブを使う場合は、選択したバージョンと配布名に対応する
+チェックサムが一致することを確認してから展開します。
+
+```sh
+NVIM_VERSION=v0.12.5 NVIM_ARCHIVE="$PWD/nvim-macos-arm64.tar.gz" ./.bin/install.sh
+```
+
+既存の Neovim が 0.11 未満、起動不能、API または runtime 不足の場合は場所と理由を示して
+停止します。`~/.local/opt/nvim-<platform>/` に不完全な配置が残った場合は、その配置を
+確認して別の場所へ移してから再実行してください。導入は一時ディレクトリで検証後に
+配置するため、通常の失敗や割り込みで途中ファイルを残しません。
+
+配布形式は [Neovim公式インストール手順](https://github.com/neovim/neovim/blob/master/INSTALL.md)
 に沿っています。初回の通常起動では lazy.nvim とプラグインの取得にもネット接続が必要です。
+回帰テストは `./tests/install.sh` で実行できます。GitHub Actions では macOS arm64 / Intel と
+Linux x86_64 / arm64 上で故障系テストと公式配布の実起動を確認します。
 
 ### Mac で環境構築を完結させる修正計画
 

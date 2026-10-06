@@ -28,6 +28,14 @@
 !/.bin/git-nlog
 !/.bin/git-ndiff
 !/.bin/install.sh
+!/.bin/nvim-versions.tsv
+
+# Installer regression tests and CI workflow
+!/tests/
+!/tests/install.sh
+!/.github/
+!/.github/workflows/
+!/.github/workflows/install.yml
 
 # XDG application settings
 !/.config/

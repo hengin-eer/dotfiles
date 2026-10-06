@@ -1,0 +1,55 @@
+name: Dotfiles installer
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-15
+          - macos-15-intel
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run regression tests
+        run: |
+          bash -n .bin/install.sh tests/install.sh
+          ./tests/install.sh
+      - name: Install and launch the pinned Neovim release
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_home=$(mktemp -d)
+          test_repo=$(mktemp -d)
+          trap 'rm -rf "$test_home" "$test_repo"' EXIT
+          git archive HEAD | tar -x -C "$test_repo"
+          cat > "$test_repo/.config/shell/path.sh" <<'EOF'
+          PATH="$HOME/.local/bin:$HOME/.bin:$DOTFILES_CI_BIN"
+          export PATH
+          EOF
+          clean_bin="$test_home/clean-bin"
+          mkdir -p "$clean_bin" "$test_home/.vim/autoload"
+          for utility in env bash sh awk basename cat date dirname find git grep ln \
+            mkdir mktemp mv readlink rm sed sort tar touch uname curl sha256sum shasum; do
+            utility_path=$(command -v "$utility" || true)
+            if [ -n "$utility_path" ]; then
+              ln -s "$utility_path" "$clean_bin/$utility"
+            fi
+          done
+          : > "$test_home/.vim/autoload/plug.vim"
+          export DOTFILES_CI_BIN="$clean_bin"
+          HOME="$test_home" PATH="$clean_bin" "$test_repo/.bin/install.sh"
+          export HOME="$test_home"
+          export PATH="$test_home/.local/bin:$clean_bin"
+          nvim --version
+          nvim --headless -u NONE \
+            -c 'lua assert(type(vim.lsp.enable) == "function")' \
+            -c 'lua assert(#vim.api.nvim_get_runtime_file("doc/options.txt", false) > 0)' \
+            -c 'qa!'
