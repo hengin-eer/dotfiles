@@ -36,7 +36,7 @@ jobs:
           EOF
           clean_bin="$test_home/clean-bin"
           mkdir -p "$clean_bin" "$test_home/.vim/autoload"
-          for utility in env bash sh awk basename cat date dirname find git grep ln \
+          for utility in env bash sh awk basename cat date dirname find git grep gzip ln \
             mkdir mktemp mv readlink rm sed sort tar touch uname curl sha256sum shasum; do
             utility_path=$(command -v "$utility" || true)
             if [ -n "$utility_path" ]; then
