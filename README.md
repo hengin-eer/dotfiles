@@ -90,6 +90,36 @@ NVIM_VERSION=v0.12.5 NVIM_ARCHIVE="$PWD/nvim-macos-arm64.tar.gz" ./.bin/install.
 回帰テストは `./tests/install.sh` で実行できます。GitHub Actions では macOS arm64 / Intel と
 Linux x86_64 / arm64 上で故障系テストと公式配布の実起動を確認します。
 
+### Claude Code と Neovim の連携
+
+Claude Code CLI は dotfiles インストーラとは別に導入します。Mac / Linux / WSL では
+[公式のネイティブインストーラ](https://code.claude.com/docs/en/setup)を利用できます。
+
+```sh
+curl -fsSL https://claude.ai/install.sh -o /tmp/claude-install.sh
+# 取得したスクリプトを確認してから実行
+bash /tmp/claude-install.sh stable
+. ~/.config/shell/path.sh
+claude --version
+claude
+```
+
+初回は自分のアカウントでブラウザ認証を完了してください。認証情報は dotfiles に保存しません。
+ネイティブ版は自動更新され、`~/.local/bin/claude` は共通 PATH 設定で読み込まれます。
+
+Neovim は [claudecode.nvim](https://github.com/coder/claudecode.nvim) と snacks.nvim を
+lazy.nvim で導入します。初回起動の取得を待つか、次でプラグインをインストールします。
+
+```sh
+nvim --headless '+Lazy! install' '+qa!'
+nvim
+```
+
+`:ClaudeCode` または `Space a c` で Claude Code を開きます。
+`Space a f` でフォーカス、`Space a b` で現在のファイル追加、ビジュアル選択後の
+`Space a s` で選択範囲の送信、`Space a a` / `Space a d` で変更の採用 / 却下を行います。
+CLI が見つからない場合は新しいターミナルを開き、`command -v claude` を確認してください。
+
 ### Mac で環境構築を完結させる修正計画
 
 今回対応した範囲は、Bash・zsh 共通の PATH、Neovim の取得・配置、Starship の初期化、
