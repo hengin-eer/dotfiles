@@ -10,6 +10,10 @@ end
 if wezterm.target_triple:find("windows") then
     config.default_domain = "WSL:Ubuntu"
     config.win32_system_backdrop = "Acrylic"
+elseif wezterm.target_triple:find("apple") then
+    config.macos_window_background_blur = 20
+    -- CoreText may not discover the installer's symlinked fonts.
+    config.font_dirs = { wezterm.home_dir .. "/Library/Fonts" }
 end
 
 config.automatically_reload_config = true
@@ -17,8 +21,6 @@ config.font = wezterm.font("FiraCode Nerd Font")
 config.font_size = 12.0
 config.use_ime = true
 config.window_background_opacity = 0.8
--- NOTE: In Mac OS, you must use this instead of `win32_xxx`
--- config.macos_window_background_blur = 20
 
 ----------------------------------------------------
 -- Tab

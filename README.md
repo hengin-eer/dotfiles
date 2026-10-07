@@ -90,6 +90,32 @@ NVIM_VERSION=v0.12.5 NVIM_ARCHIVE="$PWD/nvim-macos-arm64.tar.gz" ./.bin/install.
 回帰テストは `./tests/install.sh` で実行できます。GitHub Actions では macOS arm64 / Intel と
 Linux x86_64 / arm64 上で故障系テストと公式配布の実起動を確認します。
 
+### Mac の WezTerm
+
+WezTerm 本体の導入は dotfiles のインストーラとは別に行います。
+Homebrew が使える場合は、[WezTerm 公式の macOS 手順](https://wezterm.org/install/macos.html)
+に従って次を実行します。導入済みの場合は本体の再インストールは不要です。
+
+```sh
+brew install --cask wezterm
+./.bin/install.sh
+wezterm show-keys
+wezterm ls-fonts
+open -a WezTerm
+```
+
+`~/.config/wezterm/wezterm.lua` を読み込み、Mac ではユーザーのログインシェルを起動します。
+`WSL:Ubuntu` と Acrylic は Windows でだけ設定します。Mac では背景の blur を有効にし、
+インストーラが配置する `~/Library/Fonts` を `font_dirs` に追加して
+FiraCode Nerd Font を検索します。CoreText が symlink 先のフォントを認識しない場合も
+WezTerm が直接読み込みます。`wezterm ls-fonts` で FiraCode Nerd Font が表示されることを
+確認してください。フォント検索の仕様は [公式 font_dirs ドキュメント](https://wezterm.org/config/lua/config/font_dirs.html)
+を参照してください。
+
+コピーと貼り付けは Mac 標準の `Cmd+C` / `Cmd+V` を使えます。
+WezTerm のログインシェルで共通の PATH 設定が読み込まれるため、
+セットアップ済みの `nvim` や `claude` をそのまま実行できます。
+
 ### Mac で環境構築を完結させる修正計画
 
 今回対応した範囲は、Bash・zsh 共通の PATH、Neovim の取得・配置、Starship の初期化、
