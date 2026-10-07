@@ -10,7 +10,7 @@ dotfilesです。LinuxとmacOSへのインストールに対応しています�
 
 主な管理対象は次のとおりです。
 
-- Bash、Vim、EditorConfig
+- Bash・zsh、Vim、EditorConfig
 - Neovim、WezTerm（端末エミュレーター）
 - Herdr（ターミナルマルチプレクサーとworktree管理）
 - GitHub CLIの`config.yml`（`hosts.yml`は管理しない）
@@ -42,8 +42,69 @@ npx skills add herdrdev/herdr --skill herdr -g
 - 管理対象の設定だけをHOMEへsymlink
 - Linuxでは`~/.local/share/fonts`、macOSでは`~/Library/Fonts`へフォントをsymlink
 - vim-plugが存在しない場合は公式リポジトリからインストール
+- `nvim` が PATH 上にない場合、固定バージョンの公式配布を取得・検証して
+  `~/.local/opt/nvim-<platform>/` に配置し、`~/.local/bin/nvim` を symlink
 
 同じ内容のsymlinkは変更しないため、インストーラは再実行できます。
+
+Bash・zsh 共通の `~/.config/shell/path.sh` で `~/.local/bin`、`~/.bin` と
+Homebrew の `/opt/homebrew/{bin,sbin}`・`/usr/local/{bin,sbin}` を PATH に追加します。
+zsh は `.zprofile` と `.zshrc`、Bash は `.bash_profile` と `.bashrc` から読み込みます。
+Starship はコマンドが見つかる場合だけシェルに合う初期化を行います。
+既存のシェル設定は置き換え前にバックアップされるので、個人設定は必要に応じて戻してください。
+
+インストール完了後は新しいターミナルを開くか、現在のシェルで次を実行してください。
+インストーラの子プロセスから親シェルの PATH は変更できません。
+
+```sh
+. ~/.config/shell/path.sh
+command -v nvim starship codex
+nvim --version
+```
+
+Neovim は本体だけをコピーせず、`bin`・`lib`・`share` を一緒に配置します。
+Apple Silicon / Intel Mac と Linux（WSLを含む）の arm64 / x86_64 に対応します。
+PATH 上にある Neovim は起動・runtime・`vim.lsp.enable` API を確認して再利用します。
+Neovim 0.11 以上が必要です。新規導入の既定は `v0.12.5` で、各配布物の SHA-256 は
+`.bin/nvim-versions.tsv` で管理します。追加登録済みの別バージョンを選ぶ場合は、
+次のように指定します。
+
+```sh
+./.bin/install.sh --nvim-version v0.12.5
+```
+
+取得済みの公式アーカイブを使う場合は、選択したバージョンと配布名に対応する
+チェックサムが一致することを確認してから展開します。
+
+```sh
+NVIM_VERSION=v0.12.5 NVIM_ARCHIVE="$PWD/nvim-macos-arm64.tar.gz" ./.bin/install.sh
+```
+
+既存の Neovim が 0.11 未満、起動不能、API または runtime 不足の場合は場所と理由を示して
+停止します。`~/.local/opt/nvim-<platform>/` に不完全な配置が残った場合は、その配置を
+確認して別の場所へ移してから再実行してください。導入は一時ディレクトリで検証後に
+配置するため、通常の失敗や割り込みで途中ファイルを残しません。
+
+配布形式は [Neovim公式インストール手順](https://github.com/neovim/neovim/blob/master/INSTALL.md)
+に沿っています。初回の通常起動では lazy.nvim とプラグインの取得にもネット接続が必要です。
+回帰テストは `./tests/install.sh` で実行できます。GitHub Actions では macOS arm64 / Intel と
+Linux x86_64 / arm64 上で故障系テストと公式配布の実起動を確認します。
+
+### Mac で環境構築を完結させる修正計画
+
+今回対応した範囲は、Bash・zsh 共通の PATH、Neovim の取得・配置、Starship の初期化、
+WezTerm の Windows 専用設定の条件分岐です。
+現時点の `.bin/install.sh` は Starship・Codex・mise 本体の自動導入までは行いません。
+
+1. Starship が未導入の場合に、[公式インストーラ](https://starship.rs/guide/)を curl で
+   取得し、`~/.local/bin` を指定して導入する。既存の Homebrew 版があれば再利用する。
+2. Codex の公式導入方式と対応 CPU を確認し、未導入の場合だけ導入する。
+   既存の curl 版（`~/.local/bin/codex`）と Homebrew 版は再利用する。
+3. mise 本体の導入後に `mise install` を実行し、Herdr integration を含むセットアップを
+   明示的なオプションで実行できるようにする。
+4. Mac arm64 / Intel と WSL のクリーン環境で、初回導入・再実行・通信失敗時の動作と
+   `nvim`・`starship`・`codex` の起動を確認する。
+
 
 Herdrはmiseでバージョンを固定してインストールします。Herdrの設定ファイルだけを
 `~/.config/herdr/config.toml`へsymlinkし、ログやセッション状態はHOME側に残します。
