@@ -24,6 +24,8 @@ setup_case() {
         "$REPO/.vim" "$REPO/fonts" "$HOME_DIR/.vim/autoload" "$MOCK_BIN"
     cp "$DOTDIR/.bin/install.sh" "$REPO/.bin/install.sh"
     cp "$DOTDIR/.bin/nvim-versions.tsv" "$REPO/.bin/nvim-versions.tsv"
+    cp -R "$DOTDIR/.bin/install.d" "$REPO/.bin/install.d"
+    mkdir -p "$CASE_ROOT/tmp"
     mkdir -p "$REPO/.config/shell" "$REPO/.config/nvim" "$REPO/.config/wezterm" \
         "$REPO/.config/herdr" "$REPO/.config/gh" "$REPO/.config/mdts" "$REPO/.config/mise"
     cat > "$REPO/.config/shell/path.sh" <<'EOF'
@@ -55,7 +57,47 @@ case "$1" in
 esac
 EOF
     chmod +x "$MOCK_BIN/uname"
+    write_mock_curl
     export TEST_BIN="$MOCK_BIN" TEST_OS=Linux TEST_ARCH=x86_64
+}
+
+# Offline stand-in for the official tool installers. The fake installer records
+# its arguments and selected environment, then creates a runnable command.
+write_mock_curl() {
+    cat > "$MOCK_BIN/curl" <<'EOF'
+#!/bin/sh
+output= url=
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -o) output=$2; shift ;;
+        --retry | --connect-timeout | --max-time) shift ;;
+        -*) ;;
+        *) url=$1 ;;
+    esac
+    shift
+done
+printf '%s\n' "$url" >> "$HOME/curl.log"
+[ -z "${FAKE_CURL_FAIL:-}" ] || exit 22
+case "$url" in
+    https://mise.run) tool=mise ;;
+    https://claude.ai/install.sh) tool=claude ;;
+    https://chatgpt.com/codex/install.sh) tool=codex ;;
+    *) exit 22 ;;
+esac
+cat > "$output" <<SCRIPT
+#!/bin/sh
+printf '$tool args=%s noninteractive=%s path=%s dir=%s\\n' "\$*" \\
+    "\${CODEX_NON_INTERACTIVE:-}" "\${MISE_INSTALL_PATH:-}" "\${CODEX_INSTALL_DIR:-}" \\
+    >> "\$HOME/installers.log"
+[ -z "\${FAKE_INSTALLER_SLEEP:-}" ] || exec sleep "\$FAKE_INSTALLER_SLEEP"
+[ -z "\${FAKE_INSTALLER_FAIL:-}" ] || exit 3
+[ -z "\${FAKE_INSTALLER_NO_BIN:-}" ] || exit 0
+mkdir -p "\$HOME/.local/bin"
+printf '#!/bin/sh\\necho $tool\\n' > "\$HOME/.local/bin/$tool"
+chmod +x "\$HOME/.local/bin/$tool"
+SCRIPT
+EOF
+    chmod +x "$MOCK_BIN/curl"
 }
 
 make_payload() {
@@ -91,7 +133,7 @@ EOF
 run_installer() {
     HOME="$HOME_DIR" PATH="$MOCK_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
         TEST_BIN="$MOCK_BIN" TEST_OS="$TEST_OS" TEST_ARCH="$TEST_ARCH" \
-        NVIM_ARCHIVE="${NVIM_ARCHIVE:-}" \
+        NVIM_ARCHIVE="${NVIM_ARCHIVE:-}" TMPDIR="$CASE_ROOT/tmp" \
         "$REPO/.bin/install.sh" "$@" > "$OUTPUT" 2>&1
 }
 expect_failure() { if run_installer "$@"; then fail "expected installer failure: $*"; fi; }
@@ -266,9 +308,118 @@ test_dry_run_and_platforms() {
     printf 'ok - all supported OS and CPU combinations select the intended release\n'
 }
 
+assert_clean_tool_staging() {
+    if find "$CASE_ROOT/tmp" -name 'dotfiles-*' -print | grep . >/dev/null; then
+        fail "tool installer staging directory was left behind"
+    fi
+}
+
+test_tools_install_and_rerun() {
+    local tool
+    setup_case
+    make_payload nvim-linux-x86_64
+    NVIM_ARCHIVE="$ARCHIVE" run_installer
+    for tool in mise claude codex; do
+        [ -x "$HOME_DIR/.local/bin/$tool" ] || fail "$tool was not installed"
+        assert_contains "$OUTPUT" "$tool is available: $HOME_DIR/.local/bin/$tool"
+    done
+    assert_contains "$HOME_DIR/installers.log" "mise args= noninteractive= path=$HOME_DIR/.local/bin/mise dir="
+    assert_contains "$HOME_DIR/installers.log" "claude args=stable noninteractive= path= dir="
+    assert_contains "$HOME_DIR/installers.log" "codex args= noninteractive=1 path= dir=$HOME_DIR/.local/bin"
+    assert_clean_tool_staging
+    : > "$HOME_DIR/curl.log"
+    run_installer
+    for tool in mise claude codex; do
+        assert_contains "$OUTPUT" "$tool is already available"
+    done
+    [ ! -s "$HOME_DIR/curl.log" ] || fail "rerun downloaded an installer again"
+    printf 'ok - mise, Claude Code and Codex are installed once and reused on rerun\n'
+}
+
+test_tools_dry_run_and_skip() {
+    setup_case
+    run_installer --dry-run
+    assert_contains "$OUTPUT" "Install mise with the official installer: https://mise.run"
+    assert_contains "$OUTPUT" "Install claude with the official installer: https://claude.ai/install.sh"
+    assert_contains "$OUTPUT" "Install codex with the official installer: https://chatgpt.com/codex/install.sh"
+    [ ! -e "$HOME_DIR/curl.log" ] || fail "dry-run downloaded a tool installer"
+    printf 'ok - dry-run reports tool installers without downloading\n'
+
+    setup_case
+    make_payload nvim-linux-x86_64
+    NVIM_ARCHIVE="$ARCHIVE" run_installer --skip-tools
+    assert_contains "$OUTPUT" "Skip tool installation"
+    [ ! -e "$HOME_DIR/curl.log" ] || fail "--skip-tools downloaded a tool installer"
+    printf 'ok - --skip-tools leaves mise, Claude Code and Codex alone\n'
+}
+
+test_tool_failures() {
+    setup_case
+    make_payload nvim-linux-x86_64
+    NVIM_ARCHIVE="$ARCHIVE"; export NVIM_ARCHIVE
+    FAKE_CURL_FAIL=1 expect_failure
+    assert_contains "$OUTPUT" "cannot download the mise installer"
+    assert_clean_tool_staging
+    FAKE_INSTALLER_FAIL=1 expect_failure
+    assert_contains "$OUTPUT" "the official mise installer failed"
+    assert_clean_tool_staging
+    FAKE_INSTALLER_NO_BIN=1 expect_failure
+    assert_contains "$OUTPUT" "mise was not installed at $HOME_DIR/.local/bin/mise"
+    assert_clean_tool_staging
+    run_installer
+    [ -x "$HOME_DIR/.local/bin/codex" ] || fail "retry after installer failure failed"
+    unset NVIM_ARCHIVE
+    printf 'ok - download and installer failures stop safely and can be retried\n'
+
+    setup_case
+    make_payload nvim-linux-x86_64
+    printf '#!/bin/sh\nexit 1\n' > "$MOCK_BIN/claude"
+    chmod +x "$MOCK_BIN/claude"
+    NVIM_ARCHIVE="$ARCHIVE" expect_failure
+    assert_contains "$OUTPUT" "claude is on PATH but cannot start: $MOCK_BIN/claude"
+    printf 'ok - an existing command that cannot start is reported instead of reused\n'
+
+    setup_case
+    make_payload nvim-linux-x86_64
+    CODEX_INSTALL_DIR="$CASE_ROOT/elsewhere" NVIM_ARCHIVE="$ARCHIVE" run_installer
+    assert_contains "$HOME_DIR/installers.log" "codex args= noninteractive=1 path= dir=$HOME_DIR/.local/bin"
+    printf 'ok - CODEX_INSTALL_DIR from the caller does not move Codex off PATH\n'
+}
+
+test_tool_interrupt_cleans_up() {
+    local pid waited=0 status=0
+    setup_case
+    make_payload nvim-linux-x86_64
+    HOME="$HOME_DIR" PATH="$MOCK_BIN:/usr/bin:/bin:/usr/sbin:/sbin" \
+        TEST_BIN="$MOCK_BIN" TEST_OS="$TEST_OS" TEST_ARCH="$TEST_ARCH" \
+        NVIM_ARCHIVE="$ARCHIVE" TMPDIR="$CASE_ROOT/tmp" FAKE_INSTALLER_SLEEP=60 \
+        "$REPO/.bin/install.sh" > "$OUTPUT" 2>&1 &
+    pid=$!
+    while [ ! -s "$HOME_DIR/installers.log" ]; do
+        [ "$waited" -lt 100 ] || fail "fake installer did not start"
+        sleep 0.1
+        waited=$((waited + 1))
+    done
+    kill -TERM "$pid"
+    waited=0
+    while kill -0 "$pid" 2>/dev/null; do
+        [ "$waited" -lt 50 ] || { kill -KILL "$pid"; fail "installer did not exit promptly on TERM"; }
+        sleep 0.1
+        waited=$((waited + 1))
+    done
+    wait "$pid" || status=$?
+    [ "$status" -eq 143 ] || fail "expected exit status 143 on TERM, got $status"
+    assert_clean_tool_staging
+    printf 'ok - TERM during an official installer exits promptly and cleans staging\n'
+}
+
 test_legacy_migration
 test_install_and_rerun
 test_reject_bad_archives
 test_failed_extract_can_retry
 test_invalid_existing_and_partial
 test_dry_run_and_platforms
+test_tools_install_and_rerun
+test_tools_dry_run_and_skip
+test_tool_failures
+test_tool_interrupt_cleans_up
