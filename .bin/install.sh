@@ -6,19 +6,23 @@ DEBUG=0
 BACKUP_DIR=
 LEGACY_CONFIG=0
 LEGACY_BIN=0
+INSTALL_TOOLS=1
 NVIM_VERSION=${NVIM_VERSION:-v0.12.5}
 NVIM_STAGING_DIR=
 
 usage() {
     cat <<'EOF'
-Usage: install.sh [--dry-run] [--debug] [--help]
+Usage: install.sh [--dry-run] [--debug] [--skip-tools] [--help]
 
-Install the explicitly managed dotfiles into the current user's home.
+Install the explicitly managed dotfiles into the current user's home, then
+install mise, Claude Code and Codex with their official installers when they
+are not already on PATH.
 
 Options:
   -n, --dry-run  Print changes without modifying files
   -d, --debug    Print each shell command while it runs
       --nvim-version VERSION  Select a checksum-pinned Neovim release
+      --skip-tools   Do not install mise, Claude Code or Codex
   -h, --help     Show this help
 EOF
 }
@@ -600,6 +604,7 @@ while [ "$#" -gt 0 ]; do
     case "$1" in
     -n | --dry-run) DRY_RUN=1 ;;
     -d | --debug) DEBUG=1 ;;
+    --skip-tools) INSTALL_TOOLS=0 ;;
     --nvim-version)
         [ "$#" -ge 2 ] || die "--nvim-version requires a version such as v0.12.5"
         NVIM_VERSION=$2
@@ -633,6 +638,14 @@ esac
 [ "$DOTDIR" != "$HOME" ] ||
     die "the dotfiles repository must not be the home directory"
 
+# Tool installers live in separate files; tools.sh holds their shared helpers.
+for module in tools mise claude codex; do
+    [ -f "$DOTDIR/.bin/install.d/$module.sh" ] ||
+        die "installer module not found: $DOTDIR/.bin/install.d/$module.sh"
+    . "$DOTDIR/.bin/install.d/$module.sh"
+done
+unset module
+
 log "Dotfiles source: $DOTDIR"
 log "Target home: $HOME"
 [ "$DRY_RUN" -eq 0 ] || log "Dry-run mode: no files will be changed"
@@ -648,6 +661,13 @@ install_fonts
 . "$DOTDIR/.config/shell/path.sh"
 install_neovim
 install_vim_plug
+if [ "$INSTALL_TOOLS" -eq 1 ]; then
+    install_mise
+    install_claude_code
+    install_codex
+else
+    log "Skip tool installation: mise, Claude Code, Codex"
+fi
 
 if [ -n "$BACKUP_DIR" ]; then
     log "Backup: $BACKUP_DIR"

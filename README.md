@@ -31,6 +31,7 @@ git clone git@github.com:hengin-eer/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./.bin/install.sh --dry-run
 ./.bin/install.sh
+. ~/.config/shell/path.sh
 mise install
 herdr integration install codex
 npx skills add herdrdev/herdr --skill herdr -g
@@ -44,6 +45,36 @@ npx skills add herdrdev/herdr --skill herdr -g
 - vim-plugが存在しない場合は公式リポジトリからインストール
 - `nvim` が PATH 上にない場合、固定バージョンの公式配布を取得・検証して
   `~/.local/opt/nvim-<platform>/` に配置し、`~/.local/bin/nvim` を symlink
+- mise・Claude Code・Codex が PATH 上にない場合、それぞれの公式インストーラで導入
+
+### ツールの導入（mise・Claude Code・Codex）
+
+各ツールの導入処理は `.bin/install.d/` に分割し、`install.sh` から読み込みます。
+
+| ファイル | 内容 |
+| --- | --- |
+| `tools.sh` | 共通処理（取得・実行・後片付け・起動確認） |
+| `mise.sh` | [mise 公式インストーラ](https://mise.jdx.dev/installing-mise.html)（`https://mise.run`） |
+| `claude.sh` | [Claude Code ネイティブインストーラ](https://code.claude.com/docs/en/setup)（`stable` チャネル） |
+| `codex.sh` | Codex CLI 公式 standalone インストーラ（`https://chatgpt.com/codex/install.sh`） |
+
+インストーラは `curl | sh` で直接実行せず、一時ディレクトリに保存してから実行します。
+そのため通信が途中で切れても、途中までのスクリプトは実行されません。
+どのツールも `~/.local/bin` に配置します。この場所は先に読み込む `path.sh` で PATH に
+入っているため、各インストーラが `.zshrc` などの管理ファイルへ PATH 設定を追記することは
+ありません。導入後は `--version` で起動を確認します。
+
+すでにコマンドがある場合は再導入しません。更新は各ツールの仕組みに任せます
+（Claude Code と Codex は自動更新、mise は `mise self-update`）。
+バージョンを固定する場合は環境変数で指定します。
+
+```sh
+MISE_VERSION=v2026.11.12 CLAUDE_CODE_RELEASE=latest CODEX_RELEASE=0.171.0 ./.bin/install.sh
+./.bin/install.sh --skip-tools   # ツール導入を行わない
+```
+
+新しいツールを追加するときは、`.bin/install.d/<tool>.sh` に `install_<tool>` 関数を書き、
+`install.sh` のモジュール一覧と呼び出し部分に追加します。
 
 同じ内容のsymlinkは変更しないため、インストーラは再実行できます。
 
@@ -118,18 +149,17 @@ WezTerm のログインシェルで共通の PATH 設定が読み込まれるた
 
 ### Mac で環境構築を完結させる修正計画
 
-今回対応した範囲は、Bash・zsh 共通の PATH、Neovim の取得・配置、Starship の初期化、
-WezTerm の Windows 専用設定の条件分岐です。
-現時点の `.bin/install.sh` は Starship・Codex・mise 本体の自動導入までは行いません。
+対応済みの範囲は、Bash・zsh 共通の PATH、Neovim の取得・配置、Starship の初期化、
+WezTerm の Windows 専用設定の条件分岐、mise・Claude Code・Codex 本体の自動導入です。
+`.bin/install.sh` は Starship の自動導入と `mise install` の実行までは行いません。
 
-1. Starship が未導入の場合に、[公式インストーラ](https://starship.rs/guide/)を curl で
-   取得し、`~/.local/bin` を指定して導入する。既存の Homebrew 版があれば再利用する。
-2. Codex の公式導入方式と対応 CPU を確認し、未導入の場合だけ導入する。
-   既存の curl 版（`~/.local/bin/codex`）と Homebrew 版は再利用する。
-3. mise 本体の導入後に `mise install` を実行し、Herdr integration を含むセットアップを
-   明示的なオプションで実行できるようにする。
-4. Mac arm64 / Intel と WSL のクリーン環境で、初回導入・再実行・通信失敗時の動作と
-   `nvim`・`starship`・`codex` の起動を確認する。
+1. Starship が未導入の場合に、[公式インストーラ](https://starship.rs/guide/)を
+   `.bin/install.d/starship.sh` から `~/.local/bin` へ導入する。既存の Homebrew 版があれば
+   再利用する。
+2. `mise install` と Herdr integration を含むセットアップを、明示的なオプションで
+   実行できるようにする。
+3. Mac arm64 / Intel と WSL のクリーン環境で、初回導入・再実行・通信失敗時の動作と
+   `nvim`・`starship`・`codex`・`claude` の起動を確認する。
 
 
 Herdrはmiseでバージョンを固定してインストールします。Herdrの設定ファイルだけを
@@ -171,13 +201,10 @@ worktreeで同時にcheckoutすることはできず、branch/refを書き換え
 
 ### Claude Code と Neovim の連携
 
-Claude Code CLI は dotfiles インストーラとは別に導入します。Mac / Linux / WSL では
-[公式のネイティブインストーラ](https://code.claude.com/docs/en/setup)を利用できます。
+Claude Code CLI は `./.bin/install.sh` が
+[公式のネイティブインストーラ](https://code.claude.com/docs/en/setup)で導入します。
 
 ```sh
-curl -fsSL https://claude.ai/install.sh -o /tmp/claude-install.sh
-# 取得したスクリプトを確認してから実行
-bash /tmp/claude-install.sh stable
 . ~/.config/shell/path.sh
 claude --version
 claude

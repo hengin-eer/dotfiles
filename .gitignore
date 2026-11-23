@@ -29,6 +29,9 @@
 !/.bin/git-ndiff
 !/.bin/install.sh
 !/.bin/nvim-versions.tsv
+!/.bin/install.d/
+/.bin/install.d/*
+!/.bin/install.d/*.sh
 
 # Installer regression tests and CI workflow
 !/tests/
