@@ -20,7 +20,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run regression tests
         run: |
-          bash -n .bin/install.sh .bin/install.d/*.sh tests/install.sh
+          for script in .bin/install.sh .bin/install.d/*.sh tests/install.sh; do
+            bash -n "$script"
+          done
           ./tests/install.sh
       - name: Install and launch the pinned Neovim release
         shell: bash

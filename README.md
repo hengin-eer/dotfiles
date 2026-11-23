@@ -64,14 +64,22 @@ npx skills add herdrdev/herdr --skill herdr -g
 入っているため、各インストーラが `.zshrc` などの管理ファイルへ PATH 設定を追記することは
 ありません。導入後は `--version` で起動を確認します。
 
-すでにコマンドがある場合は再導入しません。更新は各ツールの仕組みに任せます
+すでにコマンドがあり `--version` で起動できる場合は再導入しません。起動できない場合は
+場所を示して停止します。更新は各ツールの仕組みに任せます
 （Claude Code と Codex は自動更新、mise は `mise self-update`）。
-バージョンを固定する場合は環境変数で指定します。
+Codex は呼び出し元の `CODEX_INSTALL_DIR` に関わらず `~/.local/bin` へ導入します。
+
+新規導入時のバージョンは環境変数で指定できます。既に導入済みのツールには適用されません。
+`CLAUDE_CODE_RELEASE` は `stable`（既定）・`latest` のチャネルか、具体的なバージョンです。
 
 ```sh
-MISE_VERSION=v2026.11.12 CLAUDE_CODE_RELEASE=latest CODEX_RELEASE=0.171.0 ./.bin/install.sh
+MISE_VERSION=v2026.11.12 CLAUDE_CODE_RELEASE=2.1.323 CODEX_RELEASE=0.171.0 ./.bin/install.sh
 ./.bin/install.sh --skip-tools   # ツール導入を行わない
 ```
+
+インストーラスクリプトの取得には接続 20 秒・全体 120 秒のタイムアウトがあります。
+導入中に中断（`Ctrl+C` や `SIGTERM`）した場合は、実行中のインストーラを止めて
+一時ディレクトリを削除してから終了します。
 
 新しいツールを追加するときは、`.bin/install.d/<tool>.sh` に `install_<tool>` 関数を書き、
 `install.sh` のモジュール一覧と呼び出し部分に追加します。
